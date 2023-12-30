@@ -1,0 +1,87 @@
+name: github-action
+run-name: ${{ github.actor }} is out building GitHub Actions
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - '**' 
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Maven Projects
+        run: |
+          mvn clean package -f ./taxi-calling-service/pom.xml
+          mvn clean package -f ./driver-management-service/pom.xml
+          mvn clean package -f ./mobile-application-service/pom.xml
+          mvn clean package -f ./payment-service/pom.xml
+          mvn clean package -f ./location-service/pom.xml
+
+      - name: Docker Build and push for TaxiCallingService
+        uses: docker/build-push-action@v4
+        with:
+          context: ./taxi-calling-service
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/taxi-calling-service:latest
+            ghcr.io/${{ github.repository }}/taxi-calling-service:${{ github.ref_name }}
+            
+      - name: Docker Build and push for DriverManagementService
+        uses: docker/build-push-action@v4
+        with:
+          context: ./driver-management-service
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/driver-management-service:latest
+            ghcr.io/${{ github.repository }}/driver-management-service:${{ github.ref_name }}
+            
+      - name: Docker Build and push for MobileApplicationService
+        uses: docker/build-push-action@v4
+        with:
+          context: ./mobile-application-service
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/mobile-application-service:latest
+            ghcr.io/${{ github.repository }}/mobile-application-service:${{ github.ref_name }}
+            
+      - name: Docker Build and push for PaymentService
+        uses: docker/build-push-action@v4
+        with:
+          context: ./payment-service
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/payment-service:latest
+            ghcr.io/${{ github.repository }}/payment-service:${{ github.ref_name }}
+            
+      - name: Docker Build and push for LocationService
+        uses: docker/build-push-action@v4
+        with:
+          context: ./location-service
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/location-service:latest
+            ghcr.io/${{ github.repository }}/location-service:${{ github.ref_name }}
+            
